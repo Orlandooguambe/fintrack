@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="pagetitle d-flex align-items-center justify-content-between flex-wrap gap-2">
+  <h1 class="m-0">Novo movimento</h1>
+  <a class="btn btn-outline-secondary" href="{{ url_for('transactions') }}">
+    <i class="bi bi-arrow-left"></i> Voltar à lista
+  </a>
+</div>
+
+<section class="section">
+  <div class="row g-3">
+
+    <!-- Nova Entrada/Saída -->
+    <div class="col-md-6 col-xl-4">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title d-flex align-items-center gap-2">
+            <i class="bi bi-plus-circle"></i> Entrada / Saída
+          </h5>
+
+          <form method="post" action="{{ url_for('transactions_new') }}">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label fw-bold">Tipo</label>
+                <select class="form-select" name="tipo" required>
+                  <option value="income">Entrada</option>
+                  <option value="expense">Saída</option>
+                </select>
+              </div>
+
+              <div class="col-6">
+                <label class="form-label fw-bold">Conta</label>
+                <select class="form-select" name="account_id" required>
+                  {% for c in contas %}
+                    <option value="{{ c['id'] }}">{{ c['nome'] }} ({{ c['banco'] }})</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="col-6">
+                <label class="form-label fw-bold">Data</label>
+                <input class="form-control" type="date" name="data" value="{{ now().date() }}">
+              </div>
+
+              <div class="col-6">
+                <label class="form-label fw-bold">Valor</label>
+                <div class="input-group">
+                  <span class="input-group-text">MT</span>
+                  <input class="form-control" type="number" name="valor" step="0.01" required>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-bold">Descrição</label>
+                <input class="form-control" name="descricao" placeholder="Almoço, Perfume, água, etc.">
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-bold">Categoria</label>
+                <input class="form-control" name="categoria" list="catlist" placeholder="refeição, compras, transporte…">
+                <datalist id="catlist">
+                  <option value="salario">
+                  <option value="extra">
+                  <option value="refeição">
+                  <option value="compras">
+                  <option value="transporte">
+                  <option value="divida">
+                  <option value="transfer">
+                </datalist>
+              </div>
+            </div>
+
+            <button class="btn btn-primary w-100 mt-3">
+              <i class="bi bi-check2-circle"></i> Registar
+            </button>
+          </form>
+        </div>
+      </div>
+       {% include 'flash.html' %}
+    </div>
+    
+    <!-- Transferência entre contas -->
+    <div class="col-md-6 col-xl-4">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title d-flex align-items-center gap-2">
+            <i class="bi bi-arrow-left-right"></i> Transferência
+          </h5>
+
+          <form method="post" action="{{ url_for('transfer') }}">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label fw-bold">De</label>
+                <select class="form-select" name="from_account" required>
+                  {% for c in contas %}
+                    <option value="{{ c['id'] }}">{{ c['nome'] }} ({{ c['banco'] }})</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="col-6">
+                <label class="form-label fw-bold">Para</label>
+                <select class="form-select" name="to_account" required>
+                  {% for c in contas %}
+                    <option value="{{ c['id'] }}">{{ c['nome'] }} ({{ c['banco'] }})</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="col-6">
+                <label class="form-label fw-bold">Data</label>
+                <input class="form-control" type="date" name="data" value="{{ now().date() }}">
+              </div>
+
+              <div class="col-6">
+                <label class="form-label fw-bold">Valor</label>
+                <div class="input-group">
+                  <span class="input-group-text">MT</span>
+                  <input class="form-control" type="number" name="valor" step="0.01" required>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-bold">Descrição</label>
+                <input class="form-control" name="descricao" placeholder="Transferência">
+              </div>
+            </div>
+
+            <button class="btn btn-secondary w-100 mt-3">
+              <i class="bi bi-arrow-repeat"></i> Transferir
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Split do Salário -->
+    <div class="col-md-12 col-xl-4">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title d-flex align-items-center gap-2">
+            <i class="bi bi-scissors"></i> Split do Salário
+          </h5>
+
+          <form method="post" action="{{ url_for('salary_split') }}">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label fw-bold">Data</label>
+                <input class="form-control" type="date" name="data" value="{{ now().date() }}">
+              </div>
+
+              <div class="col-6">
+                <label class="form-label fw-bold">Valor total</label>
+                <div class="input-group">
+                  <span class="input-group-text">MT</span>
+                  <input class="form-control" type="number" name="valor_total" step="0.01" required>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-bold">% para Poupança (BCI)</label>
+                <div class="input-group">
+                  <input class="form-control" type="number" name="pct_poupanca" step="0.01" value="40">
+                  <span class="input-group-text">%</span>
+                </div>
+              </div>
+            </div>
+             {% include 'flash.html' %}
+            <button class="btn btn-success w-100 mt-3">
+              <i class="bi bi-check2-circle"></i> Registar & Transferir
+            </button>
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

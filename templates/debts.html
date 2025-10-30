@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="pagetitle d-flex align-items-center justify-content-between flex-wrap gap-2">
+  <h1 class="m-0">Dívidas</h1>
+</div>
+
+<section class="section">
+
+  <div class="row g-3 mb-3">
+
+    <!-- Criar Dívida -->
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title d-flex align-items-center gap-2">
+            <i class="bi bi-journal-plus"></i> Nova Dívida
+          </h5>
+
+          <form method="post" action="{{ url_for('debts') }}">
+            <div class="mb-2">
+              <label class="form-label fw-bold">Nome</label>
+              <input class="form-control" name="nome" required placeholder="Ex: Vodafone, João, etc.">
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label fw-bold">Valor total (MT)</label>
+              <div class="input-group">
+                <span class="input-group-text">MT</span>
+                <input class="form-control" type="number" name="valor_total" step="0.01" required>
+              </div>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label fw-bold">Data limite</label>
+              <input class="form-control" type="date" name="due_date">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-bold">Notas</label>
+              <textarea class="form-control" name="notas" rows="2" placeholder="Detalhes, referência, etc."></textarea>
+            </div>
+
+            <button class="btn btn-primary w-100">
+              <i class="bi bi-check2-circle"></i> Registar Dívida
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumo rápido -->
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title d-flex align-items-center gap-2">
+            <i class="bi bi-clipboard-data"></i> Resumo
+          </h5>
+
+          <ul class="list-group small">
+            {% set total_aberto = 0 %}
+            {% for d in rows %}
+              {% if d['status'] != 'paga' %}
+                {% set total_aberto = total_aberto + (d['valor_total'] - d['valor_pago']) %}
+              {% endif %}
+            {% endfor %}
+            <li class="list-group-item d-flex justify-content-between">
+              <span>Em aberto total</span>
+              <strong class="text-danger">{{ '%.2f' % total_aberto }} MT</strong>
+            </li>
+            <li class="list-group-item small text-muted">
+              * soma de todas dívidas pendentes
+            </li>
+          </ul>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Lista -->
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title d-flex align-items-center gap-2">
+        <i class="bi bi-list-check"></i> Lista de Dívidas
+      </h5>
+
+      <div class="table-responsive">
+        <table class="table align-middle" id="tbl">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th class="text-end">Valor</th>
+              <th class="text-end">Pago</th>
+              <th class="text-end">Em Aberto</th>
+              <th>Vencimento</th>
+              <th>Status</th>
+              <th class="text-center">Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in rows %}
+            {% set aberto = (d['valor_total'] - d['valor_pago']) %}
+            <tr class="{{ 'table-light' if d['status'] == 'paga' else '' }}">
+              <td class="fw-semibold">
+                {{ d['nome'] }}
+                {% if d['notas'] %}
+                  <div class="small text-muted">{{ d['notas'] }}</div>
+                {% endif %}
+              </td>
+
+              <td class="text-end">{{ '%.2f' % d['valor_total'] }}</td>
+              <td class="text-end text-success">{{ '%.2f' % d['valor_pago'] }}</td>
+              <td class="text-end text-danger">{{ '%.2f' % aberto }}</td>
+
+              <td>{{ d['due_date'] or '' }}</td>
+
+              <td>
+                {% if d['status'] == 'paga' %}
+                  <span class="badge bg-success"><i class="bi bi-check2-circle"></i> paga</span>
+                {% else %}
+                  <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> pendente</span>
+                {% endif %}
+              </td>
+
+              <td class="text-center">
+                {% if d['status'] != 'paga' %}
+                  <a class="btn btn-sm btn-outline-success"
+                     href="{{ url_for('pay_debt', debt_id=d['id']) }}">
+                    <i class="bi bi-cash-coin"></i> Pagar
+                  </a>
+                {% else %}
+                  <span class="text-muted small">—</span>
+                {% endif %}
+              </td>
+
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const dt = new simpleDatatables.DataTable('#tbl', {
+    perPage: 10,
+    perPageSelect: [5, 10, 20, 50],
+    searchable: true,
+    fixedHeight: false,
+    labels: {
+      placeholder: 'Pesquisar…',
+      perPage: '{select} por página',
+      noRows: 'Sem registos',
+      info: 'Mostrando {start} a {end} de {rows} registos',
+      noResults: 'Sem resultados'
+    }
+  });
+</script>
+{% endblock %}

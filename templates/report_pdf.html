@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <title>Relatório financeiro</title>
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 14px;
+      color: #012970;
+      margin: 0;
+      padding: 16px;
+    }
+
+    h1,h2,h3,h4,h5 {
+      margin: 0 0 .5rem 0;
+      font-weight: 600;
+      color: #012970;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      margin-left: -8px;
+      margin-right: -8px;
+    }
+    .col-6 { width: 50%; padding: 8px; box-sizing: border-box; }
+    .col-12 { width: 100%; padding: 8px; box-sizing: border-box; }
+    .col-3 { width: 25%; padding: 8px; box-sizing: border-box; }
+    .col-5 { width: 41.6666%; padding: 8px; box-sizing: border-box; }
+    .col-7 { width: 58.3333%; padding: 8px; box-sizing: border-box; }
+
+    .card {
+      border: 1px solid #cddfff;
+      border-radius: 6px;
+      box-shadow: 0 0 10px rgba(1,41,112,0.08);
+      padding: 12px 14px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: .5rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      color: #012970;
+    }
+
+    .big-number {
+      font-size: 18px;
+      font-weight: 700;
+      color: #012970;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .small-muted {
+      font-size: 11px;
+      color: #777;
+      margin-top: .25rem;
+    }
+
+    .list {
+      border: 1px solid #e0e6ff;
+      border-radius: 4px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+      font-size: 13px;
+    }
+    .list-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 10px;
+      border-bottom: 1px solid #eef2ff;
+    }
+    .list-row:last-child {
+      border-bottom: 0;
+    }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .text-end {
+      text-align: right;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    thead th {
+      background: #f6f9ff;
+      color: #012970;
+      font-weight: 600;
+      text-align: left;
+      padding: 6px 8px;
+      border: 1px solid #dbe3ff;
+      font-size: 12px;
+    }
+    tbody td {
+      border: 1px solid #e5e9ff;
+      padding: 6px 8px;
+      vertical-align: top;
+      color: #012970;
+    }
+    tr.transfer-row {
+      background: #f8f9fc;
+      color: #6c757d;
+    }
+    .badge-transfer {
+      display: inline-block;
+      font-size: 10px;
+      background: #6c757d;
+      color: #fff;
+      border-radius: 4px;
+      padding: 2px 6px;
+    }
+
+    .section-title-wrap {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .section-title-wrap h1 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .section-title-wrap .when {
+      font-size: 12px;
+      color: #777;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      font-weight: 600;
+      color: #012970;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .hint {
+      font-size: 11px;
+      color: #777;
+      margin-top: 4px;
+    }
+
+    /* for long words like descrições grandes */
+    td { word-break: break-word; }
+  </style>
+</head>
+<body>
+
+  <!-- Cabeçalho -->
+  <div class="section-title-wrap">
+    <h1>Relatório financeiro</h1>
+    <div class="when">Gerado em {{ hoje }}</div>
+  </div>
+
+  <!-- Linha 1 KPIs -->
+  <div class="row">
+    <div class="col-3">
+      <div class="card">
+        <div class="card-title">Poupança</div>
+        <div class="big-number">{{ '%.2f' % saldo_poupanca }} MT</div>
+        <div class="small-muted">Saldo atual</div>
+      </div>
+    </div>
+
+    <div class="col-3">
+      <div class="card">
+        <div class="card-title">Despesas</div>
+        <div class="big-number">{{ '%.2f' % saldo_despesas }} MT</div>
+        <div class="small-muted">Saldo atual</div>
+      </div>
+    </div>
+
+    <div class="col-3">
+      <div class="card">
+        <div class="card-title">Saldos totais</div>
+        <div class="big-number">{{ '%.2f' % saldo_total }} MT</div>
+        <div class="small-muted">Soma de todas as contas</div>
+      </div>
+    </div>
+
+    <div class="col-3">
+      <div class="card">
+        <div class="card-title">Património líquido</div>
+        <div class="big-number">{{ '%.2f' % patrimonio_liquido }} MT</div>
+        <div class="small-muted">Saldos - Dívidas em aberto</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Linha 2 KPIs -->
+  <div class="row">
+    <div class="col-6">
+      <div class="card">
+        <div class="card-title">Mês atual ({{ periodo_label }})</div>
+        <ul class="list">
+          <li class="list-row">
+            <span>Entradas</span>
+            <strong class="mono">{{ '%.2f' % month_in }} MT</strong>
+          </li>
+          <li class="list-row">
+            <span>Saídas</span>
+            <strong class="mono">{{ '%.2f' % month_out }} MT</strong>
+          </li>
+          <li class="list-row">
+            <span>Resultado</span>
+            <strong class="mono">{{ '%.2f' % (month_in - month_out) }} MT</strong>
+          </li>
+        </ul>
+        <div class="hint">*Totais do mês excluem transferências internas</div>
+      </div>
+    </div>
+
+    <div class="col-6">
+      <div class="card">
+        <div class="card-title">Totais (histórico)</div>
+        <ul class="list">
+          <li class="list-row">
+            <span>Total entradas</span>
+            <strong class="mono">{{ '%.2f' % total_in_all }} MT</strong>
+          </li>
+          <li class="list-row">
+            <span>Total saídas</span>
+            <strong class="mono">{{ '%.2f' % total_out_all }} MT</strong>
+          </li>
+          <li class="list-row">
+            <span>Dívidas em aberto</span>
+            <strong class="mono">{{ '%.2f' % dividas_abertas }} MT</strong>
+          </li>
+        </ul>
+        <div class="hint">*Totais históricos excluem transferências internas</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Linha 3: despesas categoria + contas -->
+  <div class="row">
+    <div class="col-5">
+      <div class="card">
+        <div class="card-title">Despesas por categoria (mês)</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Categoria</th>
+              <th class="text-end">Total (MT)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if cat_expenses and cat_expenses|length>0 %}
+              {% for cat, tot in cat_expenses %}
+              <tr>
+                <td>{{ cat }}</td>
+                <td class="text-end mono">{{ '%.2f' % tot }}</td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr><td colspan="2" class="small-muted">Sem despesas registadas no mês.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="col-7">
+      <div class="card">
+        <div class="card-title">Saldos por conta</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Conta</th>
+              <th>Banco</th>
+              <th>Tipo</th>
+              <th class="text-end">Saldo (MT)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in contas %}
+            <tr>
+              <td>{{ c['nome'] }}</td>
+              <td>{{ c['banco'] }}</td>
+              <td>{{ c['tipo'] }}</td>
+              <td class="text-end mono">{{ '%.2f' % (c['saldo'] or 0) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Últimos 60 movimentos -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-title">Últimos 60 movimentos</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Conta</th>
+              <th>Tipo</th>
+              <th class="text-end">Valor</th>
+              <th>Descrição</th>
+              <th>Categoria</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+            {% set is_transfer = (r['categoria'] or '')|lower == 'transfer' %}
+            <tr class="{{ 'transfer-row' if is_transfer else '' }}">
+              <td>{{ r['data'] }}</td>
+              <td>{{ r['conta'] }}</td>
+              <td>{{ 'Entrada' if r['tipo']=='income' else 'Saída' }}</td>
+              <td class="text-end mono">{{ '%.2f' % r['valor'] }}</td>
+              <td>{{ r['descricao'] or '' }}</td>
+              <td>
+                {% if is_transfer %}
+                  <span class="badge-transfer">transfer</span>
+                {% else %}
+                  {{ r['categoria'] or '' }}
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

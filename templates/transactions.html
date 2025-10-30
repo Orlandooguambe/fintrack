@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="pagetitle d-flex align-items-center justify-content-between flex-wrap gap-2">
+  <h1 class="m-0">Movimentos</h1>
+  <div class="d-flex gap-2">
+    <a class="btn btn-success" href="{{ url_for('transactions_new') }}">
+      <i class="bi bi-plus-circle"></i> Novo movimento
+    </a>
+    <a class="btn btn-outline-secondary" href="{{ url_for('transactions_export', **request.args) }}">
+      <i class="bi bi-download"></i> Exportar CSV
+    </a>
+  </div>
+</div>
+
+<section class="section">
+
+  <!-- KPIs do período + saldos -->
+  <div class="row g-3 mb-3">
+
+    <!-- Saldo Poupança -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card kpi-card kpi--poupanca">
+        <div class="card-body">
+          <h5 class="card-title d-flex align-items-center gap-2 m-0">
+            <span class="kpi-icon"><i class="bi bi-piggy-bank"></i></span>
+            Saldo Poupança
+          </h5>
+          <div class="mt-2">
+            <div class="h3 m-0 kpi-value">{{ '%.2f' % saldo_poupanca }} MT</div>
+            <div class="kpi-sub">Conta BCI (poupança)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saldo Despesas -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card kpi-card kpi--despesas">
+        <div class="card-body">
+          <h5 class="card-title d-flex align-items-center gap-2 m-0">
+            <span class="kpi-icon"><i class="bi bi-wallet2"></i></span>
+            Saldo Despesas
+          </h5>
+          <div class="mt-2">
+            <div class="h3 m-0 kpi-value">{{ '%.2f' % saldo_despesas }} MT</div>
+            <div class="kpi-sub">Conta BIM (despesas)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Entradas (período filtrado) -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card kpi-card kpi--entradas">
+        <div class="card-body">
+          <h5 class="card-title d-flex align-items-center gap-2 m-0">
+            <span class="kpi-icon"><i class="bi bi-cash-coin"></i></span>
+            Entradas (filtro)
+          </h5>
+          <div class="mt-2">
+            <div class="h3 m-0 kpi-value">{{ '%.2f' % kpi_in }} MT</div>
+            <div class="kpi-sub">*Sem transfer internas</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saídas (período filtrado) -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card kpi-card kpi--saidas">
+        <div class="card-body">
+          <h5 class="card-title d-flex align-items-center gap-2 m-0">
+            <span class="kpi-icon"><i class="bi bi-arrow-up-circle"></i></span>
+            Saídas (filtro)
+          </h5>
+          <div class="mt-2">
+            <div class="h3 m-0 kpi-value">{{ '%.2f' % kpi_out }} MT</div>
+            <div class="kpi-sub">*Sem transfer internas</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Totais gerais (histórico) -->
+    <div class="col-12">
+      <div class="card kpi-card kpi--totais">
+        <div class="card-body">
+          <h5 class="card-title d-flex align-items-center gap-2 m-0">
+            <span class="kpi-icon"><i class="bi bi-clipboard-data"></i></span>
+            Totais (histórico)
+          </h5>
+          <div class="d-flex flex-wrap gap-4 mt-2">
+            <div>
+              <div class="kpi-sub">Entradas</div>
+              <div class="h5 m-0 kpi-value">{{ '%.2f' % total_in_all }} MT</div>
+            </div>
+            <div>
+              <div class="kpi-sub">Saídas</div>
+              <div class="h5 m-0 kpi-value">{{ '%.2f' % total_out_all }} MT</div>
+            </div>
+            <div>
+              <div class="kpi-sub">Resultado</div>
+              <div class="h5 m-0 kpi-value">{{ '%.2f' % (total_in_all - total_out_all) }} MT</div>
+            </div>
+            <div class="kpi-sub align-self-center">(*exclui transferências internas)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Filtros -->
+  <form class="card mb-3" method="get">
+    <div class="card-body filters">
+      <h5 class="card-title fw-bold d-flex align-items-center gap-2">
+        <i class="bi bi-funnel"></i> Filtros
+      </h5>
+      <div class="row g-2 align-items-end">
+        <div class="col-6 col-md-3">
+          <label class="form-label fw-bold">De</label>
+          <input type="date" class="form-control" name="from" value="{{ request.args.get('from','') }}">
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label fw-bold">Até</label>
+          <input type="date" class="form-control" name="to" value="{{ request.args.get('to','') }}">
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label fw-bold">Tipo</label>
+          <select class="form-select" name="tipo">
+            <option value="">Todos</option>
+            <option value="income"  {{ 'selected' if request.args.get('tipo')=='income'  else '' }}>Entrada</option>
+            <option value="expense" {{ 'selected' if request.args.get('tipo')=='expense' else '' }}>Saída</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-4">
+          <label class="form-label fw-bold">Conta</label>
+          <select class="form-select" name="account_id">
+            <option value="">Todas</option>
+            {% for c in contas %}
+              <option value="{{ c['id'] }}" {{ 'selected' if (request.args.get('account_id')|int == c['id']) else '' }}>
+                {{ c['nome'] }} ({{ c['banco'] }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label fw-bold">Categoria</label>
+          <input class="form-control" name="categoria" value="{{ request.args.get('categoria','') }}" list="catlist" placeholder="refeição, compras…">
+          <datalist id="catlist">
+            <option value="salario"><option value="extra"><option value="refeição"><option value="compras">
+            <option value="transporte"><option value="divida"><option value="transfer">
+          </datalist>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label fw-bold">Texto</label>
+          <input class="form-control" name="q" value="{{ request.args.get('q','') }}" placeholder="Descrição contém…">
+        </div>
+        <div class="col-12 col-md-3 d-flex gap-2">
+          <button class="btn btn-primary flex-fill"><i class="bi bi-search"></i> Filtrar</button>
+          <a class="btn btn-outline-secondary flex-fill" href="{{ url_for('transactions') }}"><i class="bi bi-x-circle"></i> Limpar</a>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <!-- Tabela -->
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title d-flex align-items-center gap-2"><i class="bi bi-table"></i> Movimentos</h5>
+      <div class="table-responsive">
+        <table class="table align-middle ft-table" id="tbl">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Conta</th>
+              <th>Tipo</th>
+              <th class="text-end">Valor</th>
+              <th>Descrição</th>
+              <th>Categoria</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+            {% set is_transfer = (r['categoria'] or '')|lower == 'transfer' %}
+            <tr class="{{ 'table-light' if is_transfer else '' }}">
+              <td>{{ r['data'] }}</td>
+              <td>{{ r['conta'] }}</td>
+              <td>
+                {% if r['tipo']=='income' %}
+                  <span class="badge rounded-pill bg-success-subtle text-success"><i class="bi bi-arrow-down-circle"></i> Entrada</span>
+                {% else %}
+                  <span class="badge rounded-pill bg-danger-subtle text-danger"><i class="bi bi-arrow-up-circle"></i> Saída</span>
+                {% endif %}
+              </td>
+              <td class="text-end {{ 'ft-in' if r['tipo']=='income' else 'ft-out' }}">
+                {{ '%.2f' % r['valor'] }}
+              </td>
+              <td>{{ r['descricao'] or '' }}</td>
+              <td>
+                {% if is_transfer %}
+                  <span class="badge-chip transfer"><i class="bi bi-arrow-left-right"></i> transfer</span>
+                {% elif r['categoria'] %}
+                  <span class="badge-chip primary">{{ r['categoria'] }}</span>
+                {% else %}
+                  <span class="badge-chip neutral">(sem)</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // DataTable com paginação e seletor de itens por página
+  const dt = new simpleDatatables.DataTable('#tbl', {
+    perPage: 10,
+    perPageSelect: [5, 10, 15, 20, 50],
+    searchable: true,
+    fixedHeight: false,
+    labels: {
+      placeholder: 'Pesquisar…',
+      perPage: '{select} por página',
+      noRows: 'Sem registos',
+      info: 'Mostrando {start} a {end} de {rows} registos',
+      noResults: 'Sem resultados para a pesquisa'
+    }
+  });
+
+  // (Opcional) colorir chip por categoria comum
+  document.querySelectorAll('#tbl tbody tr').forEach(tr=>{
+    const catEl = tr.querySelector('td:last-child .badge-chip.primary');
+    if(!catEl) return;
+    const cat = catEl.textContent.trim().toLowerCase();
+    const map = {
+      'salario':'primary',
+      'refeição':'primary',
+      'compras':'primary',
+      'transporte':'primary',
+      'divida':'primary',
+      'água':'primary',
+      'agua':'primary'
+    };
+    // Mantemos a classe 'primary' (já bonita). Aqui poderias trocar por outras se quiseres.
+  });
+</script>
+{% endblock %}

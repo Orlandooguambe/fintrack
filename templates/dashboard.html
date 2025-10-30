@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="pagetitle mb-3">
+  <h1 class="d-flex align-items-center gap-2 m-0">
+    <i class="bi bi-speedometer2 text-primary"></i>
+    <span>Dashboard</span>
+  </h1>
+  <div class="text-muted small">Visão rápida do teu mês em FinTrack</div>
+</div>
+
+<section class="section dashboard">
+  <div class="row g-3">
+
+    <!-- Entradas do mês -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card fintrack-kpi kpi-income">
+        <div class="card-body">
+          <div class="kpi-head">
+            <div class="kpi-icon-circle kpi-icon-income">
+              <i class="bi bi-cash-coin"></i>
+            </div>
+            <span>Entradas (mês)</span>
+          </div>
+          <div class="kpi-value">{{ '%.2f' % total_in }} MT</div>
+          <div class="kpi-footnote">*Sem transfer internas</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saídas do mês -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card fintrack-kpi kpi-expense">
+        <div class="card-body">
+          <div class="kpi-head">
+            <div class="kpi-icon-circle kpi-icon-expense">
+              <i class="bi bi-wallet2"></i>
+            </div>
+            <span>Saídas (mês)</span>
+          </div>
+          <div class="kpi-value">{{ '%.2f' % total_out }} MT</div>
+          <div class="kpi-footnote">Média diária: {{ '%.2f' % avg_daily_spend }} MT</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resultado e poupança -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card fintrack-kpi kpi-result">
+        <div class="card-body">
+          <div class="kpi-head">
+            <div class="kpi-icon-circle kpi-icon-result">
+              <i class="bi bi-piggy-bank"></i>
+            </div>
+            <span>Resultado do mês</span>
+          </div>
+          <div class="kpi-value">{{ '%.2f' % net_month }} MT</div>
+          <div class="kpi-footnote">Taxa de poupança: {{ '%.1f' % savings_rate }}%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dívidas em aberto -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card fintrack-kpi kpi-debt">
+        <div class="card-body">
+          <div class="kpi-head">
+            <div class="kpi-icon-circle kpi-icon-debt">
+              <i class="bi bi-credit-card-2-back"></i>
+            </div>
+            <span>Dívidas em aberto</span>
+          </div>
+          <div class="kpi-value">{{ '%.2f' % divida_aberta }} MT</div>
+          <div class="kpi-footnote">Top despesa: {{ top_exp_cat }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saldos por conta -->
+    <div class="col-12">
+      <div class="card fintrack-card-chart">
+        <div class="card-body">
+          <h5 class="card-title">
+            <i class="bi bi-bank"></i>
+            <span>Saldos por conta</span>
+          </h5>
+          <div class="chart-wrapper">
+            <canvas id="saldoChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fluxo últimos 30 dias -->
+    <div class="col-12 col-xl-8">
+      <div class="card fintrack-card-chart">
+        <div class="card-body">
+          <h5 class="card-title">
+            <i class="bi bi-graph-up"></i>
+            <span>Fluxo últimos 30 dias</span>
+          </h5>
+          <div class="chart-wrapper">
+            <canvas id="fluxoChart"></canvas>
+          </div>
+          <div class="fintrack-hint mt-2">
+            * Entradas / Saídas excluem transferências internas.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Despesas por categoria -->
+    <div class="col-12 col-xl-4">
+      <div class="card fintrack-card-chart">
+        <div class="card-body">
+          <h5 class="card-title">
+            <i class="bi bi-pie-chart"></i>
+            <span>Despesas por categoria (mês)</span>
+          </h5>
+          <div class="chart-wrapper">
+            <canvas id="catPie"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Paleta FinTrack
+  const FT_BLUE  = '#007bff';
+  const FT_BLUE_SOFT = 'rgba(0,123,255,0.15)';
+  const FT_GREEN = '#00c47a';
+  const FT_GREEN_SOFT = 'rgba(0,196,122,0.15)';
+  const FT_GREY_LINE = 'rgba(0,0,0,0.06)';
+
+  // Opções base para gráficos
+  const baseOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: { boxWidth: 10, boxHeight: 10 }
+      },
+      tooltip: { mode: 'index', intersect: false }
+    },
+    layout: { padding: 0 },
+    interaction: { mode: 'nearest', intersect: false },
+    scales: {
+      x: { ticks: { maxRotation: 0 }, grid: { display: false } },
+      y: { beginAtZero: true, grid: { color: FT_GREY_LINE } }
+    }
+  };
+
+  // Fluxo últimos 30 dias (linha)
+  new Chart(document.getElementById('fluxoChart'), {
+    type: 'line',
+    data: {
+      labels: {{ labels|tojson }},
+      datasets: [
+        {
+          label: 'Entradas',
+          data: {{ incs|tojson }},
+          borderColor: FT_GREEN,
+          backgroundColor: FT_GREEN_SOFT,
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true,
+          pointRadius: 0
+        },
+        {
+          label: 'Saídas',
+          data: {{ exps|tojson }},
+          borderColor: FT_BLUE,
+          backgroundColor: FT_BLUE_SOFT,
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true,
+          pointRadius: 0
+        }
+      ]
+    },
+    options: baseOpts
+  });
+
+  // Saldos por conta (barras)
+  new Chart(document.getElementById('saldoChart'), {
+    type: 'bar',
+    data: {
+      labels: {{ saldo_labels|tojson }},
+      datasets: [{
+        label: 'Saldo (MT)',
+        data: {{ saldo_vals|tojson }},
+        backgroundColor: FT_BLUE,
+        borderColor: FT_BLUE,
+        borderWidth: 1,
+        borderRadius: 6,
+        barThickness: 28,
+        maxBarThickness: 32
+      }]
+    },
+    options: {
+      ...baseOpts,
+      plugins: {
+        ...baseOpts.plugins,
+        legend: { display: false }
+      }
+    }
+  });
+
+  // Despesas por categoria (doughnut)
+  // vamos alternar cores azul/verde/azul/verde...
+  const pieDataVals = {{ exp_vals|tojson }};
+  const pieBg = pieDataVals.map((_, idx) => idx % 2 === 0 ? FT_BLUE : FT_GREEN);
+  const pieBgSoft = pieDataVals.map((_, idx) => idx % 2 === 0 ? FT_BLUE_SOFT : FT_GREEN_SOFT);
+
+  const pieOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom' }
+    },
+    cutout: '55%'
+  };
+
+  new Chart(document.getElementById('catPie'), {
+    type: 'doughnut',
+    data: {
+      labels: {{ exp_cats|tojson }},
+      datasets: [{
+        data: pieDataVals,
+        backgroundColor: pieBg,
+        borderColor: pieBgSoft,
+        borderWidth: 2
+      }]
+    },
+    options: pieOpts
+  });
+</script>
+{% endblock %}

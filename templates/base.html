@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>{{ title or 'FinTrack - Gestão Financeira Pessoal' }}</title>
+
+  <!-- Ícone e favicon -->
+  <link href="{{ url_for('static', filename='assets/img/fintrack_favicon.png') }}" rel="icon">
+
+  <!-- Fonts e estilos -->
+  <link href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700|Nunito:300,400,600,700|Poppins:300,400,500,600,700" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/boxicons/css/boxicons.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/quill/quill.snow.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/remixicon/remixicon.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/simple-datatables/style.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/css/style.css') }}" rel="stylesheet">
+</head>
+
+<body>
+  <!-- ======= Header ======= -->
+  <header id="header" class="header fixed-top d-flex align-items-center shadow-sm">
+    <div class="d-flex align-items-center justify-content-between">
+      <a href="{{ url_for('dashboard') }}" class="logo d-flex align-items-center">
+        <img src="{{ url_for('static', filename='assets/img/fintrack_logo.png') }}" alt="FinTrack Logo" style="height:34px; margin-right:8px;">
+        <span class="d-none d-lg-block fw-semibold" style="font-size:1.25rem; color:#007bff;">FinTrack</span>
+      </a>
+      <i class="bi bi-list toggle-sidebar-btn"></i>
+    </div>
+
+    <nav class="header-nav ms-auto">
+      <ul class="d-flex align-items-center">
+        <li class="nav-item pe-3">
+          <span class="small me-2 text-muted">{{ session.get('nome') }}</span>
+          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('logout') }}">
+            <i class="bi bi-box-arrow-right"></i> Sair
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </header>
+  <!-- End Header -->
+
+  <!-- ======= Sidebar ======= -->
+<aside id="sidebar" class="sidebar">
+  <ul class="sidebar-nav" id="sidebar-nav">
+    <li class="nav-item">
+      <a class="nav-link {{ 'active' if request.endpoint == 'dashboard' else '' }}" href="{{ url_for('dashboard') }}">
+        <i class="bi bi-grid"></i><span>Dashboard</span>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link {{ 'active' if request.endpoint == 'transactions' else '' }}" href="{{ url_for('transactions') }}">
+        <i class="bi bi-cash-coin"></i><span>Movimentos</span>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link {{ 'active' if request.endpoint == 'debts' else '' }}" href="{{ url_for('debts') }}">
+        <i class="bi bi-credit-card-2-back"></i><span>Dívidas</span>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link {{ 'active' if request.endpoint == 'report' else '' }}" href="{{ url_for('report') }}">
+        <i class="bi bi-file-earmark-text"></i><span>Relatório</span>
+      </a>
+    </li>
+  </ul>
+</aside>
+<!-- End Sidebar -->
+
+
+  <main id="main" class="main">
+    {% include 'flash.html' %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer id="footer" class="footer">
+    <div class="copyright text-center">
+      © {{ now().year }} <strong><span>FinTrack</span></strong> — Controlo total das tuas finanças pessoais.
+    </div>
+  </footer>
+
+  <!-- Vendor JS -->
+  <script src="{{ url_for('static', filename='assets/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/vendor/simple-datatables/simple-datatables.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/vendor/chart.js/chart.umd.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/js/main.js') }}"></script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

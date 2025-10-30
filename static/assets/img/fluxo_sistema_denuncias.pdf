@@ -1,0 +1,60 @@
+// Fluxo do Sistema de Denúncias e Reclamações
+digraph {
+	A [label="Início (Link Público)"]
+	B [label="Menu Principal
+1. Fazer Denúncia
+2. Reclamações
+3. Acompanhamento"]
+	C [label="Formulário de Denúncia
+(Título, Descrição, Anexo, Data)"]
+	D [label="Envio anônimo automático"]
+	E [label="Geração de Código de Acompanhamento
++ Data estimada de resposta"]
+	F [label="Formulário de Reclamação
+(Opcionalmente Identificado)"]
+	G [label="Envio com ou sem identificação"]
+	H [label="Geração de Código de Acompanhamento
++ Data estimada de resposta"]
+	I [label="Inserir Código de Acompanhamento"]
+	J [label="Ver Status + Resposta"]
+	K [label="Bate-papo com RH / Compliance"]
+	L [label="Login Administrativo
+(RH / Compliance)"]
+	M [label="Dashboard
+(KPIs de Denúncias e Reclamações)"]
+	N [label="Gestão de Denúncias
+(Filtros, Responder, Atualizar Status)"]
+	O [label="Gestão de Reclamações
+(Filtros, Responder, Atualizar Status)"]
+	P [label="Relatórios
+(Por período, tipo, status, etc.)"]
+	Q [label="Definições
+(Perfil, Permissões, Senha)"]
+	R [label="Notificações por Email
+(Novas denúncias / vencimentos)"]
+	S [label="Cálculo de Prazo
+(Data prevista de resposta)"]
+	A -> B
+	B -> C
+	C -> D
+	D -> E
+	B -> F
+	F -> G
+	G -> H
+	B -> I
+	I -> J
+	J -> K
+	A -> L
+	L -> M
+	M -> N
+	M -> O
+	M -> P
+	M -> Q
+	C -> S
+	F -> S
+	S -> E
+	S -> H
+	C -> R
+	F -> R
+	L -> R
+}

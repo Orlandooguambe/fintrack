@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="pagetitle d-flex justify-content-between align-items-center">
+  <h1>Utilizadores</h1>
+</div>
+
+<section class="section">
+  <div class="row g-3">
+
+    <div class="col-md-5">
+      <div class="card"><div class="card-body">
+        <h5 class="card-title">Adicionar novo utilizador</h5>
+        <form method="post">
+          <div class="mb-2">
+            <label class="form-label fw-bold">Nome</label>
+            <input class="form-control" name="nome" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label fw-bold">Email</label>
+            <input class="form-control" type="email" name="email" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Senha</label>
+            <input class="form-control" type="password" name="senha" required>
+          </div>
+          <button class="btn btn-primary w-100">
+            <i class="bi bi-person-plus"></i> Criar Utilizador
+          </button>
+        </form>
+      </div></div>
+    </div>
+
+    <div class="col-md-7">
+      <div class="card"><div class="card-body">
+        <h5 class="card-title">Lista de utilizadores</h5>
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead><tr><th>ID</th><th>Nome</th><th>Email</th></tr></thead>
+            <tbody>
+              {% for u in users %}
+              <tr><td>{{ u['id'] }}</td><td>{{ u['nome'] }}</td><td>{{ u['email'] }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div></div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

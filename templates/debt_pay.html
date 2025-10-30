@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="pagetitle d-flex align-items-center justify-content-between flex-wrap gap-2">
+  <h1 class="m-0">Pagar dívida</h1>
+  <a class="btn btn-outline-secondary" href="{{ url_for('debts') }}">
+    <i class="bi bi-arrow-left"></i> Voltar
+  </a>
+</div>
+
+<section class="section">
+  <div class="row g-3">
+
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title d-flex align-items-center gap-2">
+            <i class="bi bi-cash-coin"></i> Pagamento
+          </h5>
+
+          <form method="post">
+            <div class="mb-2">
+              <label class="form-label fw-bold">Conta a debitar</label>
+              <select class="form-select" name="account_id" required>
+                {% for c in contas %}
+                  <option value="{{ c['id'] }}">
+                    {{ c['nome'] }} ({{ c['banco'] }}) - saldo {{ '%.2f' % c['saldo'] }} MT
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label fw-bold">Data</label>
+              <input class="form-control" type="date" name="data" value="{{ now().date() }}">
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label fw-bold">Valor a pagar (MT)</label>
+              <div class="input-group">
+                <span class="input-group-text">MT</span>
+                <input class="form-control"
+                       type="number"
+                       name="valor"
+                       step="0.01"
+                       min="0.01"
+                       max="{{ aberto }}"
+                       required>
+              </div>
+              <div class="small text-muted mt-1">
+                Em aberto: {{ '%.2f' % aberto }} MT
+              </div>
+            </div>
+
+            <button class="btn btn-success w-100 mt-3">
+              <i class="bi bi-check2-circle"></i> Confirmar Pagamento
+            </button>
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title d-flex align-items-center gap-2">
+            <i class="bi bi-clipboard-check"></i> Detalhes da Dívida
+          </h5>
+
+          <ul class="list-group">
+            <li class="list-group-item d-flex justify-content-between">
+              <span>Nome</span>
+              <strong>{{ debt['nome'] }}</strong>
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+              <span>Valor total</span>
+              <strong>{{ '%.2f' % debt['valor_total'] }} MT</strong>
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+              <span>Já pago</span>
+              <strong class="text-success">{{ '%.2f' % debt['valor_pago'] }} MT</strong>
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+              <span>Em aberto</span>
+              <strong class="text-danger">{{ '%.2f' % aberto }} MT</strong>
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+              <span>Estado</span>
+              {% if debt['status'] == 'paga' %}
+                <span class="badge bg-success"><i class="bi bi-check2-circle"></i> paga</span>
+              {% else %}
+                <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> pendente</span>
+              {% endif %}
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+              <span>Data limite</span>
+              <strong>{{ debt['due_date'] or '—' }}</strong>
+            </li>
+          </ul>
+
+          <p class="small text-muted mt-3 mb-0">
+            Quando confirmas, o sistema lança uma saída (despesa) na conta escolhida e atualiza esta dívida.
+          </p>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

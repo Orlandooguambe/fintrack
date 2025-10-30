@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FinTrack | A tua gestão financeira pessoal</title>
+  <link href="{{ url_for('static', filename='assets/vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #007bff 0%, #00c47a 100%);
+      font-family: 'Poppins', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #012970;
+    }
+
+    .login-card {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    .logo img {
+      width: 100px;
+      height: 90px;
+      margin-right: 10px;
+    }
+
+    .logo h1 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #007bff;
+      margin: 0;
+    }
+
+    .subtitle {
+      color: #6c757d;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+
+    .form-control {
+      border-radius: 10px;
+      padding: 0.75rem;
+    }
+
+    .btn-login {
+      background: #007bff;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-weight: 600;
+      width: 100%;
+      padding: 0.75rem;
+      transition: 0.3s;
+    }
+
+    .btn-login:hover {
+      background: #0056b3;
+    }
+
+    .footer {
+      margin-top: 1.5rem;
+      font-size: 0.8rem;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-card">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='assets/img/fintrack_logo.png') }}" alt="FinTrack Logo">
+     
+    </div>
+    <div class="subtitle">Organiza as tuas finanças e controla o teu dinheiro</div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" action="{{ url_for('login') }}">
+  <div class="mb-3">
+    <input type="email" name="email" class="form-control" placeholder="Email" required>
+  </div>
+  <div class="mb-3">
+    <input type="password" name="senha" class="form-control" placeholder="Palavra-passe" required>
+  </div>
+  <button type="submit" class="btn-login">Entrar</button>
+</form>
+
+
+    <div class="footer">© {{ now().year }} FinTrack. Todos os direitos reservados.</div>
+  </div>
+
+</body>
+</html>
