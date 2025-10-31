@@ -76,7 +76,7 @@
 
 
   <main id="main" class="main">
-    {% include 'flash.html' %}
+    
     {% block content %}{% endblock %}
   </main>
 
@@ -91,7 +91,63 @@
   <script src="{{ url_for('static', filename='assets/vendor/simple-datatables/simple-datatables.js') }}"></script>
   <script src="{{ url_for('static', filename='assets/vendor/chart.js/chart.umd.js') }}"></script>
   <script src="{{ url_for('static', filename='assets/js/main.js') }}"></script>
-
+  
   {% block scripts %}{% endblock %}
+  <!-- Notificações simples (sem flash) -->
+<style>
+  .ft-toast {
+    position: fixed; top: 16px; right: 16px; z-index: 1080;
+    background: #198754; color: #fff;
+    padding: 10px 14px; border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,.15);
+    display: flex; align-items: center; gap: 8px;
+    font-weight: 600;
+    animation: ft-toast-in .2s ease-out;
+  }
+  .ft-toast.ft-warn  { background: #ffc107; color:#222; }
+  .ft-toast.ft-error { background: #dc3545; }
+  .ft-toast .ft-close { background: transparent; border: 0; color: inherit; font-size: 18px; line-height: 1; }
+  @keyframes ft-toast-in { from { opacity:0; transform: translateY(-6px); } to { opacity:1; transform:none; } }
+</style>
+
+<script>
+  // Mensagens para cada código ok=
+  const FT_OK_MESSAGES = {
+    mov:      "Movimento registado com sucesso ✅",
+    transf:   "Transferência concluída ✅",
+    split:    "Salário registado e dividido ✅",
+    debt_new: "Dívida registada ✅",
+    debt_pay: "Pagamento de dívida registado ✅"
+  };
+
+  function ftNotify(msg, type = "success", timeout = 3500) {
+    const t = document.createElement("div");
+    t.className = "ft-toast" + (type === "warning" ? " ft-warn" : type === "error" ? " ft-error" : "");
+    t.innerHTML = `<span>${msg}</span>
+                   <button class="ft-close" aria-label="Fechar">&times;</button>`;
+    document.body.appendChild(t);
+    const close = () => { t.remove(); };
+    t.querySelector(".ft-close").addEventListener("click", close);
+    setTimeout(close, timeout);
+  }
+
+  (function () {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("ok");
+    if (!code) return;
+
+    const msg = FT_OK_MESSAGES[code] || "Operação concluída.";
+    // Mostra notificação
+    ftNotify(msg, "success");
+
+    // Limpa o ?ok= da URL (sem recarregar)
+    params.delete("ok");
+    const newUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
+    window.history.replaceState({}, "", newUrl);
+  })();
+</script>
+
+  
 </body>
+
 </html>

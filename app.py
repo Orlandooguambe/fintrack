@@ -213,7 +213,7 @@ def dashboard():
         FROM transactions
         WHERE user_id=?
           AND date(data) >= date(?)
-          AND (categoria IS NULL OR categoria <> 'transfer')
+          AND (categoria IS NULL OR LOWER(categoria) <> 'transfer')
         """,
         (user_id, first_month.isoformat()),
     )
@@ -243,8 +243,9 @@ def dashboard():
         FROM transactions
         WHERE user_id=?
           AND date(data) >= date('now','-29 day')
-          AND (categoria IS NULL OR categoria <> 'transfer')
-        GROUP BY d ORDER BY d
+          AND (categoria IS NULL OR LOWER(categoria) <> 'transfer')
+        GROUP BY d
+        ORDER BY d
         """,
         (user_id,),
     )
@@ -261,7 +262,7 @@ def dashboard():
         WHERE user_id=?
           AND tipo='expense'
           AND date(data) >= date(?)
-          AND (categoria IS NULL OR categoria <> 'transfer')
+          AND (categoria IS NULL OR LOWER(categoria) <> 'transfer')
         GROUP BY categoria
         ORDER BY total DESC
         """,
@@ -272,9 +273,67 @@ def dashboard():
     exp_vals = [float(r["total"] or 0) for r in exp_rows]
     top_exp_cat = f"{exp_cats[0]} — {exp_vals[0]:.2f} MT" if exp_rows else "—"
 
-    # Saldos por conta (barra)
+    # Saldos por conta (caso ainda queiras usar noutro gráfico)
     saldo_labels = [f"{c['nome']} ({c['banco']})" for c in contas]
     saldo_vals = [float(c["saldo"] or 0) for c in contas]
+
+    # --- Série mensal (últimos 12 meses), EXCLUINDO transfer ---
+    cur.execute(
+        """
+        SELECT strftime('%Y-%m', data) AS ym,
+               SUM(CASE WHEN tipo='income'  THEN valor ELSE 0 END) AS inc,
+               SUM(CASE WHEN tipo='expense' THEN valor ELSE 0 END) AS exp
+        FROM transactions
+        WHERE user_id=?
+          AND date(data) >= date('now','start of month','-11 months')
+          AND (categoria IS NULL OR LOWER(categoria) <> 'transfer')
+        GROUP BY ym
+        ORDER BY ym
+        """,
+        (user_id,),
+    )
+    rows_m = cur.fetchall()
+
+    # Construir sequência contínua de 12 meses (terminando no mês atual)
+    # Evita buracos quando não houve movimentos num mês
+    total_curr = hoje.year * 12 + (hoje.month - 1)  # mês 0-indexado
+    start_total = total_curr - 11
+    start_year = start_total // 12
+    start_month = start_total % 12 + 1
+
+    months_labels = []
+    y, m = start_year, start_month
+    for _ in range(12):
+        months_labels.append(f"{y:04d}-{m:02d}")
+        m += 1
+        if m == 13:
+            m = 1
+            y += 1
+
+    m_map = {r["ym"]: {"inc": float(r["inc"] or 0), "exp": float(r["exp"] or 0)} for r in rows_m}
+    months_in = [m_map.get(ym, {}).get("inc", 0.0) for ym in months_labels]
+    months_out = [m_map.get(ym, {}).get("exp", 0.0) for ym in months_labels]
+    months_net = [round(i - o, 2) for i, o in zip(months_in, months_out)]
+
+    # Destaques (tops)
+    def idx_max(arr):
+        if not arr:
+            return -1
+        mx = max(arr)
+        return arr.index(mx)
+
+    idx_income = idx_max(months_in)
+    idx_expense = idx_max(months_out)
+    idx_net = idx_max(months_net)
+
+    top_income_month = months_labels[idx_income] if idx_income >= 0 else "-"
+    top_income_value = months_in[idx_income] if idx_income >= 0 else 0.0
+
+    top_expense_month = months_labels[idx_expense] if idx_expense >= 0 else "-"
+    top_expense_value = months_out[idx_expense] if idx_expense >= 0 else 0.0
+
+    top_saving_month = months_labels[idx_net] if idx_net >= 0 else "-"
+    top_saving_value = months_net[idx_net] if idx_net >= 0 else 0.0
 
     conn.close()
 
@@ -295,7 +354,18 @@ def dashboard():
         saldo_vals=saldo_vals,
         exp_cats=exp_cats,
         exp_vals=exp_vals,
+        months_labels=months_labels,
+        months_in=months_in,
+        months_out=months_out,
+        months_net=months_net,
+        top_income_month=top_income_month,
+        top_income_value=top_income_value,
+        top_expense_month=top_expense_month,
+        top_expense_value=top_expense_value,
+        top_saving_month=top_saving_month,
+        top_saving_value=top_saving_value,
     )
+
 
 
 
@@ -462,7 +532,7 @@ def transactions_new():
 
         # MUITO IMPORTANTE: redirect depois de flash
         conn.close()
-        return redirect(url_for("transactions_new"))
+        return redirect(url_for("transactions_new", ok="mov"))
 
     # Se for GET normal (ou seja, carregar a página ou depois do redirect)
     contas_rows = user_accounts(user_id)
@@ -582,7 +652,10 @@ def transfer():
     conn.close()
     recalc_balances(user_id)
     flash("Transferência concluída.", "success")
-    return redirect(url_for("transactions"))
+    # no fim
+# flash("Transferência concluída.", "success")
+    return redirect(url_for("transactions_new", ok="transf"))
+
 
 
 # Split rápido do salário do dia 1 (percentagens)
@@ -629,7 +702,10 @@ def salary_split():
     conn.close()
     recalc_balances(user_id)
     flash("Salário registado e dividido.", "success")
-    return redirect(url_for("transactions"))
+    # no fim
+# flash("Salário registado e dividido.", "success")
+    return redirect(url_for("transactions_new", ok="split"))
+
 
 
 # ---------------------- Dívidas ----------------------
@@ -667,7 +743,8 @@ def debts():
             conn.rollback()
             flash(f"Erro ao registar dívida: {e}", "danger")
 
-        return redirect(url_for("debts"))
+        return redirect(url_for("debts", ok="debt_new"))
+
 
     # Listar dívidas
     cur.execute("""
@@ -775,9 +852,9 @@ def pay_debt(debt_id):
         except Exception as e:
             conn.rollback()
             flash(f"Erro ao pagar dívida: {e}", "danger")
-
+        
         conn.close()
-        return redirect(url_for("debts"))
+    return redirect(url_for("debts", ok="debt_pay"))
 
     # GET → mostrar formulário
     conn.close()

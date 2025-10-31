@@ -76,20 +76,40 @@
       </div>
     </div>
 
-    <!-- Saldos por conta -->
-    <div class="col-12">
-      <div class="card fintrack-card-chart">
-        <div class="card-body">
-          <h5 class="card-title">
-            <i class="bi bi-bank"></i>
-            <span>Saldos por conta</span>
-          </h5>
-          <div class="chart-wrapper">
-            <canvas id="saldoChart"></canvas>
-          </div>
-        </div>
+    <!-- Comparativo mensal: Entradas vs Saídas (últimos 12 meses) -->
+<div class="col-12">
+  <div class="card fintrack-card-chart">
+    <div class="card-body">
+      <h5 class="card-title">
+        <i class="bi bi-calendar3"></i>
+        <span>Entradas vs Saídas por mês (últimos 12)</span>
+      </h5>
+
+      <div class="d-flex flex-wrap gap-2 mb-2 small">
+        <span class="badge bg-success-subtle text-success">
+          <i class="bi bi-trophy"></i> Maior Entrada: 
+          <strong>{{ top_income_month }}</strong> — {{ '%.2f' % top_income_value }} MT
+        </span>
+        <span class="badge bg-danger-subtle text-danger">
+          <i class="bi bi-graph-down"></i> Maior Saída:
+          <strong>{{ top_expense_month }}</strong> — {{ '%.2f' % top_expense_value }} MT
+        </span>
+        <span class="badge bg-primary-subtle text-primary">
+          <i class="bi bi-piggy-bank"></i> Melhor Poupança (net):
+          <strong>{{ top_saving_month }}</strong> — {{ '%.2f' % top_saving_value }} MT
+        </span>
+      </div>
+
+      <div class="chart-wrapper">
+        <canvas id="mesesChart"></canvas>
+      </div>
+      <div class="fintrack-hint mt-2">
+        * Valores excluem transferências internas. “Poupança (net)” = Entradas − Saídas do mês.
       </div>
     </div>
+  </div>
+</div>
+
 
     <!-- Fluxo últimos 30 dias -->
     <div class="col-12 col-xl-8">
@@ -188,55 +208,127 @@
     options: baseOpts
   });
 
-  // Saldos por conta (barras)
-  new Chart(document.getElementById('saldoChart'), {
-    type: 'bar',
-    data: {
-      labels: {{ saldo_labels|tojson }},
-      datasets: [{
-        label: 'Saldo (MT)',
-        data: {{ saldo_vals|tojson }},
+  // Comparativo mensal (barras para entradas/saídas + linha para net)
+const mmLabels = {{ months_labels|tojson }};
+const mmIn = {{ months_in|tojson }};
+const mmOut = {{ months_out|tojson }};
+const mmNet = {{ months_net|tojson }};
+
+new Chart(document.getElementById('mesesChart'), {
+  type: 'bar',
+  data: {
+    labels: mmLabels,
+    datasets: [
+      {
+        type: 'bar',
+        label: 'Entradas',
+        data: mmIn,
+        backgroundColor: FT_GREEN,
+        borderColor: FT_GREEN,
+        borderWidth: 1,
+        borderRadius: 6,
+        barThickness: 24,
+        maxBarThickness: 28
+      },
+      {
+        type: 'bar',
+        label: 'Saídas',
+        data: mmOut,
         backgroundColor: FT_BLUE,
         borderColor: FT_BLUE,
         borderWidth: 1,
         borderRadius: 6,
-        barThickness: 28,
-        maxBarThickness: 32
-      }]
-    },
-    options: {
-      ...baseOpts,
-      plugins: {
-        ...baseOpts.plugins,
-        legend: { display: false }
+        barThickness: 24,
+        maxBarThickness: 28
+      },
+      {
+        type: 'line',
+        label: 'Poupança (net)',
+        data: mmNet,
+        borderColor: '#495057',
+        backgroundColor: 'rgba(73,80,87,0.15)',
+        borderWidth: 2,
+        tension: 0.3,
+        pointRadius: 3,
+        yAxisID: 'y'
       }
+    ]
+  },
+  options: {
+    ...baseOpts,
+    plugins: {
+      ...baseOpts.plugins,
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+        callbacks: {
+          label: (ctx) => {
+            const v = ctx.parsed.y ?? ctx.parsed;
+            return `${ctx.dataset.label}: ${Number(v).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MT`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: { grid: { display: false } },
+      y: { beginAtZero: true, grid: { color: FT_GREY_LINE } }
     }
-  });
+  }
+});
 
   // Despesas por categoria (doughnut)
   // vamos alternar cores azul/verde/azul/verde...
-  const pieDataVals = {{ exp_vals|tojson }};
-  const pieBg = pieDataVals.map((_, idx) => idx % 2 === 0 ? FT_BLUE : FT_GREEN);
-  const pieBgSoft = pieDataVals.map((_, idx) => idx % 2 === 0 ? FT_BLUE_SOFT : FT_GREEN_SOFT);
+  // dados vindos do backend
+  const pieCats = {{ exp_cats|tojson }};
+  const pieVals = {{ exp_vals|tojson }};
+
+  // hash -> Hue (0–359). Mantém cor estável por categoria.
+  function hueFromString(str) {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) {
+      h = (h * 31 + str.charCodeAt(i)) >>> 0;
+    }
+    return h % 360;
+  }
+
+  // gera paleta HSL bonita e consistente por categoria
+  const pieBg = pieCats.map(cat => `hsl(${hueFromString(cat)}, 70%, 55%)`);
+  const pieBorder = pieCats.map(cat => `hsl(${hueFromString(cat)}, 70%, 40%)`);
+
+  const totalPie = pieVals.reduce((a, b) => a + b, 0) || 1;
 
   const pieOpts = {
     responsive: true,
     maintainAspectRatio: false,
+    cutout: '55%',
     plugins: {
-      legend: { position: 'bottom' }
-    },
-    cutout: '55%'
+      legend: {
+        position: 'bottom',
+        labels: { boxWidth: 12, boxHeight: 12 }
+      },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => {
+            const v = ctx.parsed;
+            const pct = ((v * 100) / totalPie).toFixed(1);
+            // ex.: "Alimentação: 1 250,00 MT (23,5%)"
+            return `${ctx.label}: ${v.toLocaleString('pt-PT', {minimumFractionDigits:2, maximumFractionDigits:2})} MT (${pct}%)`;
+          }
+        }
+      }
+    }
   };
 
   new Chart(document.getElementById('catPie'), {
     type: 'doughnut',
     data: {
-      labels: {{ exp_cats|tojson }},
+      labels: pieCats,
       datasets: [{
-        data: pieDataVals,
+        data: pieVals,
         backgroundColor: pieBg,
-        borderColor: pieBgSoft,
-        borderWidth: 2
+        borderColor: pieBorder,
+        borderWidth: 2,
+        hoverOffset: 6
       }]
     },
     options: pieOpts
